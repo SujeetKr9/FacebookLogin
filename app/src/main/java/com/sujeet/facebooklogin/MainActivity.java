@@ -16,8 +16,15 @@ import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.Profile;
+import com.facebook.internal.ImageRequest;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -44,7 +51,36 @@ public class MainActivity extends AppCompatActivity {
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                info.setText("User ID: " + loginResult.getAccessToken().getUserId() + "\n" + "Auth Token: " + loginResult.getAccessToken().getToken());
+                info.setText("User ID: " + loginResult.getAccessToken().getUserId() + "\n" +
+                        "Auth Token: " + loginResult.getAccessToken().getToken() );
+
+                GraphRequest request = GraphRequest.newMeRequest(
+                        loginResult.getAccessToken(),
+                        new GraphRequest.GraphJSONObjectCallback() {
+                            @Override
+                            public void onCompleted(JSONObject object, GraphResponse response) {
+                                // Application code
+                                try {
+                                    Log.e("Response", response.toString());
+
+                                    String email = response.getJSONObject().getString("email");
+                                    String firstName = response.getJSONObject().getString("first_name");
+                                    String lastName = response.getJSONObject().getString("last_name");
+                                    String profileURL = "";
+                                    if (Profile.getCurrentProfile() != null) {
+                                        profileURL = ImageRequest.getProfilePictureUri(Profile.getCurrentProfile().getId(), 400, 400).toString();
+                                    }
+
+                                    //TODO put your code here
+                                } catch (JSONException e) {
+                                   // Toast.makeText(ActivitySignIn.this, R.string.error_occurred_try_again, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                Bundle parameters = new Bundle();
+                parameters.putString("fields", "id,email,first_name,last_name");
+                request.setParameters(parameters);
+                request.executeAsync();
             }
 
             @Override
